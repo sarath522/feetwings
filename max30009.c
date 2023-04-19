@@ -12,7 +12,9 @@
 #define NUM_SAMPLES_PER_INT		2
 
 uint8_t readBuf[NUM_SAMPLES_PER_INT*NUM_BYTES_PER_SAMPLE];	// array to store register reads
-uint32_t adcCountArr[NUM_SAMPLES_PER_INT];
+
+uint32_t i_adcCountArr[NUM_SAMPLES_PER_INT];
+uint32_t q_adcCountArr[NUM_SAMPLES_PER_INT];
 
 uint16_t getFifoDataCount()
 {
@@ -117,16 +119,27 @@ void get_data_from_buffer()
 {
 
 	spiRead(STATUS_1, 2);	// read and clear all status registers
-
 	if (!CHECK_FULL_BIT_ENABLE)	// check A_FULL bit
 		return;
-
 	uint32_t count = getFifoDataCount();		// read FIFO_DATA_COUNT
-
-	spiRead(FIFO_DATA_REGISTER, count*NUM_BYTES_PER_SAMPLE);	// read FIFO_DATA
+	readBuf=spiRead(FIFO_DATA_REGISTER, count*NUM_BYTES_PER_SAMPLE);	// read FIFO_DATA
 	uint8_t ix=0, jx=0;
-	for (ix=0; ix< count*NUM_BYTES_PER_SAMPLE; ix+=NUM_BYTES_PER_SAMPLE)	// parse the FIFO data
-		adcCountArr[jx++] = ((readBuf[ix+0]&0xf)<<16) + (readBuf[ix+1]<<8) + readBuf[ix+2];
+
+	for (ix=0; ix< count*NUM_BYTES_PER_SAMPLE; ix+=NUM_BYTES_PER_SAMPLE){
+		// parse the FIFO data
+		uint8_t find = (readBuf[ix+0]&0xf0);
+
+			if(16 == find)
+			{
+				i_adcCountArr[jx++] = ((readBuf[ix+0]&0xf)<<16) + (readBuf[ix+1]<<8) + readBuf[ix+2];
+			}
+			else if(32 == find)
+			{
+				q_adcCountArr[jx++] = ((readBuf[ix+0]&0xf)<<16) + (readBuf[ix+1]<<8) + readBuf[ix+2];
+			}
+
+	}
+
 
 }
 
