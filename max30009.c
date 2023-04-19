@@ -9,7 +9,8 @@
 #include "max30009.h"
 
 #define NUM_BYTES_PER_SAMPLE	3
-#define NUM_SAMPLES_PER_INT	3
+#define NUM_SAMPLES_PER_INT		2
+
 uint8_t readBuf[NUM_SAMPLES_PER_INT*NUM_BYTES_PER_SAMPLE];	// array to store register reads
 uint32_t adcCountArr[NUM_SAMPLES_PER_INT];
 
