@@ -52,7 +52,9 @@
 #include "clkman.h"
 #include "ioman.h"
 #include "spim.h"
-#include "max30009.h"
+
+
+//#include "max30009.h"
 
 /***** Definitions *****/
 #define MX25_BAUD           100000    // 48 MHz maximum, 20 kHz minimum
@@ -96,7 +98,7 @@ int main(void)
     sys_cfg_spim_t sys_cfg;
 
     // MX25 IO Config                  core I/O, ss0, ss1, ss2, quad, fast I/O
-    sys_cfg.io_cfg = (ioman_cfg_t)IOMAN_SPIM0(1,   1,  0,    0,    0,        0, 0, 0);
+    sys_cfg.io_cfg = (ioman_cfg_t)IOMAN_SPIM0(1,   1,  0,    0,    0,  0, 0, 0);
     sys_cfg.clk_scale = CLKMAN_SCALE_AUTO;
 
     if((error = SPIM_Init(MXC_SPIM0, &cfg, &sys_cfg)) != E_NO_ERROR) {
@@ -106,14 +108,14 @@ int main(void)
         printf("SPIM Initialized\n");
     }
 
-    uint8_t cmd[2] = {0xFF,0x80};
-	uint8_t id = 0;
+    uint8_t cmd[3] = {0xFF,0x80,0X00};
+	uint8_t id[3] ={0,0,0};
 
 	// Send the command
 	req.len     = 3;
 	req.tx_data  = cmd;
 	req.rx_data  = id;
-	req.deass   = 0;
+	req.deass   = 1;
 	SPIM_Trans(MXC_SPIM0, &req);
 
 //	// Read the data

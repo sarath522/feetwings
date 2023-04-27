@@ -70,22 +70,49 @@
 
 			//*FIFO_config_1*//
 
+#define FIFO_A_FULL_156  					156
+
+//typdef enum{
+//
+//	FIFO_A_FULL_0 = 0,
+//	FIFO_A_FULL_1,
+//	FIFO_A_FULL_2,
+//	FIFO_A_FULL_3,
+//	FIFO_A_FULL_4,
+//	FIFO_A_FULL_5,
+//	FIFO_A_FULL_6,
+//	FIFO_A_FULL_7,
+//	FIFO_A_FULL_8,
+//	FIFO_A_FULL_9,
+//	FIFO_A_FULL_10,
+//	FIFO_A_FULL_11,
+//	FIFO_A_FULL_12,
+//	FIFO_A_FULL_13,
+//	FIFO_A_FULL_14,
+//	FIFO_A_FULL_15,
+//	FIFO_A_FULL_16,
+//	FIFO_A_FULL_17,
+//	FIFO_A_FULL_18,
+//	FIFO_A_FULL_19,
+//
+//}
+
 			//*FIFO_config_2*//
 
 #define FIFO_SELF_CLEANING_DISABLE 			(0x00 << 5)
 #define FIFO_SELF_CLEANING_ENABLE 			(0x01 << 5)
 
 #define FIFO_FLUSH_DISABLE          		(0x00 << 4)
-#define FIFO_FLUSH_DISABLE          		(0x01 << 4)
+#define FIFO_FLUSH_ENABLE 	         		(0x01 << 4)
 
-#define FIFO_STATUS_CLEAR_ENABLE			(0x00 << 3)
-#define FIFO_STATUS_CLEAR_DISABLE			(0x01 << 3)
+#define FIFO_STATUS_CLEAR_ENABLE			(0x01 << 3)
+#define FIFO_STATUS_CLEAR_DISABLE			(0x00 << 3)
 
-#define FULL_TYPE_ENABLE           			(0x00 << 2)
-#define FULL_TYPE_DISABLE           		(0x01 << 2)
+#define FULL_TYPE_ENABLE           			(0x01 << 2)
+#define FULL_TYPE_DISABLE           		(0x00 << 2)
 
-#define FIFO_STOPS_FULL_ENABLE     			(0x00 << 1)
-#define FIFO_STOPS_FULL_DISABLE     		(0x01 << 1)
+#define FIFO_RO_ENABLE     					(0x01 << 1)
+#define FIFO_RO_DISABLE 		    		(0x00 << 1)
 
 				//*System_sync*//
 
@@ -165,8 +192,8 @@
 
 
 				//*PLL_Config_3*/
-
-#define PLL_LOCK_WNDW 						0x01 //(recommended when using high-jitter FCLK input)
+#define PLL_LOCK_WNDW_DISABLE 				0x00
+#define PLL_LOCK_WNDW_ENABLE 				0x01 //(recommended when using high-jitter FCLK input)
 
 
 				//*PLL_Config_4*/
@@ -465,20 +492,7 @@
 #define DC_LOFF_NL_EN_DISABLE				0X00
 #define DC_LOFF_NL_EN_ENABLE				0x01
 
-
-
-
-
-
-
 uint16_t getFifoDataCount();
-
-
-
-
-
-
-
 
 
 #endif /* MAX30009_H_ */

@@ -53,6 +53,7 @@
 									<listOptionValue builtIn="false" value="&quot;C:\Maxim\Firmware\MAX32620\Libraries\CMSIS\Device\Maxim\MAX32620\Include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;C:\Maxim\Firmware\MAX32620\Libraries\Boards\MAX32620FTHR\Include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;C:\Maxim\Firmware\MAX32620\Libraries\FreeRTOS\Source\include&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;C:\Maxim\Firmware\MAX32620\Libraries\Boards\EvKit_V1\Include&quot;"/>
 								</option>
 								<inputType id="ilg.gnuarmeclipse.managedbuild.cross.tool.c.compiler.input.68945223" superClass="ilg.gnuarmeclipse.managedbuild.cross.tool.c.compiler.input"/>
 							</tool>

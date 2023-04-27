@@ -11,12 +11,14 @@
 #define NUM_BYTES_PER_SAMPLE	3
 #define NUM_SAMPLES_PER_INT		2
 
-uint8_t readBuf[NUM_SAMPLES_PER_INT*NUM_BYTES_PER_SAMPLE];	// array to store register reads
+uint8_t readBuf[FIFO_A_FULL_156*NUM_BYTES_PER_SAMPLE];	// array to store register reads
 
-uint32_t i_adcCountArr[NUM_SAMPLES_PER_INT];
-uint32_t q_adcCountArr[NUM_SAMPLES_PER_INT];
 
-uint16_t getFifoDataCount()
+uint32_t i_adcCountArr[FIFO_A_FULL_156];
+uint32_t q_adcCountArr[FIFO_A_FULL_156];
+uint32_t adcCountArr[FIFO_A_FULL_156];
+
+uint16_t max30009_getFifoDataCount()
 {
 	uint8_t value = 0;
 	uint16_t FIFODataCount = 0;
@@ -28,7 +30,7 @@ uint16_t getFifoDataCount()
 	return FIFODataCount;
 }
 
-uint8_t getFifoOverflowCount()
+uint8_t max30009_getFifoOverflowCount()
 {
 	uint8_t value = 0;
 	value = spi_read(FIFO_COUNTER_1);
@@ -36,7 +38,7 @@ uint8_t getFifoOverflowCount()
 	return value;
 }
 
-void init()
+void max30009_init()
 {
 
 	spi_write(BIOZ_CONFIG_1, BIOZ_DAC_OSR_32 | BIOZ_ADC_OSR_512 | BIOZ_BANDGP_DISABLE | BIOZ_Q_DISABLE | BIOZ_I_DISABLE);//set DAC_OSR and ADC_OSR & Disable BioZ
@@ -47,7 +49,7 @@ void init()
 
 	spi_write(PLL_CONFIG_2,MDIV_LSB); //set MDIV LSB
 
-	spi_write(PLL_CONFIG_3,PLL_LOCK_WNDW);
+	spi_write(PLL_CONFIG_3,PLL_LOCK_WNDW_ENABLE);//Enabling PLL window helps to avoid false phase_unlock interrupt
 
     spi_write(PLL_CONFIG_1, PLL_ENABLE);//PLL Enabled
 
@@ -64,8 +66,10 @@ void init()
 
     spi_write(BIOZ_CONFIG_4, 0x00); // Fast start Disabled
 
+    //Resistor opened, internal capacitor shorted, Bioz gain is 10, Bioz demodulation clk enabled,Bioz INA High Power Mode is enabled
     spi_write(BIOZ_CONFIG_5,BIOZ_AHPF_BYPASS_FILTER | BIOZ_INA_MODE_HIGH_POWER | BIOZ_DM_DIS_DEMOD_CLK_ENABLE | BIOZ_GAIN_10);
 
+    //
     spi_write(BIOZ_CONFIG_6 , BIOZ_EXT_CAP_USED | BIOZ_DC_RESTORE_SW_CLOSE | BIOZ_AMP_BW_MED_HIGH| BIOZ_AMP_RGE_MED_HIGH);
 
 //	spi_write(BIOZ_CONFIG_LOW_THRES, 0x00);//BIOZ_LO_THRESH sets the BioZ under-range threshold
@@ -88,16 +92,15 @@ void init()
 
 	spi_write(INTERRUPT_ENABLE_1,INT_A_FULL_ENABLE);
 
-	uint8_t value = 0;
-	value = spi_read(BIOZ_CONFIG_1);
-	value = ((value & 0xF8)| BIOZ_BANDGP_ENABLE | BIOZ_Q_ENABLE | BIOZ_I_ENABLE);
-	spi_write(BIOZ_CONFIG_1,value);
+	spi_write(FIFO_CONFIG_1,FIFO_A_FULL_156);
 
+	spi_write(FIFO_CONFIG_1,FIFO_SELF_CLEANING_DISABLE | FIFO_FLUSH_ENABLE | FIFO_STATUS_CLEAR_ENABLE | FULL_TYPE_DISABLE | FIFO_RO_ENABLE);
 
+	enable_bioz();
 
 }
 
-void enable_bioz(){
+void max30009_startBiozMeasurement(){
 
 		uint8_t value = 0;
 		value = spi_read(BIOZ_CONFIG_1);
@@ -106,7 +109,7 @@ void enable_bioz(){
 
 }
 
-void disable_bioz(){
+void max30009_stopBiozMeasurement(){
 
 		uint8_t value = 0;
 		value = spi_read(BIOZ_CONFIG_1);
@@ -115,37 +118,66 @@ void disable_bioz(){
 
 }
 
-void get_data_from_buffer()
-{
 
-	spiRead(STATUS_1, 2);	// read and clear all status registers
-	if (!CHECK_FULL_BIT_ENABLE)	// check A_FULL bit
-		return;
+uint8_t get_data_from_buffer()
+{
+	uint8_t value[8];
+	value=spiRead(STATUS_1, 0x80);	// read and clear all status registers
+	if (!(value[0] & CHECK_FULL_BIT_ENABLE))										// check A_FULL bit
+		return 0;
 	uint32_t count = getFifoDataCount();		// read FIFO_DATA_COUNT
 	readBuf=spiRead(FIFO_DATA_REGISTER, count*NUM_BYTES_PER_SAMPLE);	// read FIFO_DATA
-	uint8_t ix=0, jx=0;
-
-	for (ix=0; ix< count*NUM_BYTES_PER_SAMPLE; ix+=NUM_BYTES_PER_SAMPLE){
-		// parse the FIFO data
-		uint8_t find = (readBuf[ix+0]&0xf0);
-
-			if(16 == find)
-			{
-				i_adcCountArr[jx++] = ((readBuf[ix+0]&0xf)<<16) + (readBuf[ix+1]<<8) + readBuf[ix+2];
-			}
-			else if(32 == find)
-			{
-				q_adcCountArr[jx++] = ((readBuf[ix+0]&0xf)<<16) + (readBuf[ix+1]<<8) + readBuf[ix+2];
-			}
-
-	}
-
 
 }
 
+uint32_t parse_data(uint8_t readBuf[])
+{
+	uint32_t count = getFifoDataCount();
+	uint8_t ix=0, jx=0;
+	for (ix=0; ix < count * NUM_BYTES_PER_SAMPLE; ix+=NUM_BYTES_PER_SAMPLE)
+	{
+		uint8_t tag = (readBuf[ix+0]&0xf0);
+		if(16 == tag) //
+		{
+			i_phase();
 
+		}
+		else if(32 == tag)
+		{
+			q_phase();
+		}
+																							// parse the FIFO data
+		//adcCountArr[jx++] = ((readBuf[ix+0]&0xf)<<16) + (readBuf[ix+1]<<8) + readBuf[ix+2];
+	}
 
+	return adcCountArr;
 
+}
 
+uint32_t i_phase_parsing(uint8_t readBuf[])
+{
+	uint32_t count = getFifoDataCount();
 
+	uint8_t ix=0, jx=0;
 
+	for (ix=0; ix < count * NUM_BYTES_PER_SAMPLE; ix+=NUM_BYTES_PER_SAMPLE)
+	{
+		i_adcCountArr[jx++] = ((readBuf[ix+0]&0xf)<<16) + (readBuf[ix+1]<<8) + readBuf[ix+2];
+	}
+	return i_adcCountArr;
+
+}
+
+uint32_t q_phase_parsing(uint8_t readBuf[])
+{
+	uint32_t count = getFifoDataCount();
+
+	uint8_t ix=0, jx=0;
+
+	for (ix=0; ix < count * NUM_BYTES_PER_SAMPLE; ix+=NUM_BYTES_PER_SAMPLE)
+	{
+		q_adcCountArr[jx++] = ((readBuf[ix+0]&0xf)<<16) + (readBuf[ix+1]<<8) + readBuf[ix+2];
+	}
+	return q_adcCountArr;
+
+}
